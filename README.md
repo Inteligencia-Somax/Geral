@@ -1,0 +1,2 @@
+# Geral
+Base Geral Somax
