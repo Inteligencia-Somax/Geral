@@ -1,2 +1,2 @@
-# Geral
-Base Geral Somax
+# Simulador Somax Corteva
+Glifosato
