@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador de Custo/ha · Glifosatos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,500&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f4efe4;
+    --paper2:#ece4d3;
+    --ink:#1f2419;
+    --forest:#1d3b25;
+    --forest2:#2f5a3a;
+    --leaf:#3f7d4e;
+    --amber:#c8841f;
+    --amber-soft:#f0d28a;
+    --edit:#fff4cf;
+    --edit-bd:#e0b34a;
+    --win:#1d6b3a;
+    --win-bg:#d8edd9;
+    --iawin:#1c5677;
+    --iawin-bg:#d6e8f2;
+    --line:#cdc0a4;
+    --muted:#6f6a59;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:'Archivo',sans-serif;
+    color:var(--ink);
+    background:var(--paper);
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(63,125,78,.10), transparent 40%),
+      radial-gradient(circle at 85% 90%, rgba(200,132,31,.10), transparent 45%);
+    min-height:100vh;
+    line-height:1.45;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.4;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.045'/%3E%3C/svg%3E");
+  }
+  .wrap{position:relative;z-index:1;max-width:1320px;margin:0 auto;padding:clamp(16px,3vw,34px)}
+
+  header{margin-bottom:26px}
+  .kicker{
+    font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--leaf);
+    font-weight:700;display:flex;align-items:center;gap:9px
+  }
+  .kicker::before{content:"";width:26px;height:2px;background:var(--amber);display:inline-block}
+  h1{
+    font-family:'Fraunces',serif;font-weight:900;font-size:clamp(30px,5.4vw,54px);
+    line-height:.98;letter-spacing:-.02em;color:var(--forest);margin:.18em 0 .12em
+  }
+  h1 em{font-style:italic;font-weight:500;color:var(--amber)}
+  .sub{color:var(--muted);max-width:60ch;font-size:15px}
+
+  .panel{
+    background:var(--paper2);border:1px solid var(--line);border-radius:16px;
+    padding:18px 20px;margin:22px 0;display:flex;flex-wrap:wrap;gap:22px;align-items:flex-end;
+    box-shadow:0 1px 0 rgba(255,255,255,.5) inset, 0 10px 30px -22px rgba(31,36,25,.5)
+  }
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--forest2)}
+  .area-input{
+    font-family:'Fraunces',serif;font-weight:600;font-size:30px;color:var(--forest);
+    background:var(--edit);border:2px solid var(--edit-bd);border-radius:11px;
+    padding:6px 14px;width:190px;outline:none
+  }
+  .area-input:focus{border-color:var(--amber);box-shadow:0 0 0 4px rgba(200,132,31,.18)}
+  .hint{font-size:12.5px;color:var(--muted);max-width:30ch}
+  .btns{display:flex;gap:10px;margin-left:auto}
+  button.ctl{
+    font-family:'Archivo';font-weight:600;font-size:13px;cursor:pointer;
+    border:1.5px solid var(--forest2);background:transparent;color:var(--forest2);
+    border-radius:10px;padding:9px 15px;transition:.16s
+  }
+  button.ctl:hover{background:var(--forest2);color:var(--paper)}
+  button.ctl:disabled{opacity:.32;cursor:not-allowed}
+  button.ctl:disabled:hover{background:transparent;color:var(--forest2)}
+
+  .scroller{overflow-x:auto;border-radius:16px;border:1px solid var(--line);background:#fffdf7;
+    box-shadow:0 18px 50px -34px rgba(31,36,25,.7)}
+  table{border-collapse:collapse;width:100%;min-width:560px}
+  th,td{text-align:left;padding:10px 13px;border-bottom:1px solid #e9e0cc;font-size:14px;white-space:nowrap}
+  thead th{background:var(--forest);color:var(--paper);position:sticky;top:0;z-index:3;font-family:'Archivo';font-weight:600}
+  thead th:first-child{z-index:5}
+  .rowlabel{
+    position:sticky;left:0;background:#f7f2e6;font-weight:600;color:var(--forest2);
+    z-index:2;border-right:1px solid #e3d8be;font-size:13px;min-width:188px
+  }
+  thead .rowlabel{background:var(--forest);color:var(--paper);z-index:6}
+  tbody tr:nth-child(even) td:not(.rowlabel){background:rgba(236,228,211,.35)}
+
+  .section td{background:var(--paper2)!important;color:var(--forest2);font-weight:700;
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:7px 13px}
+  .section .rowlabel{background:var(--paper2)!important}
+
+  select.prod{
+    font-family:'Archivo';font-weight:600;font-size:13.5px;color:var(--forest);
+    background:#fff;border:1.5px solid var(--leaf);border-radius:9px;padding:7px 8px;
+    width:100%;min-width:150px;cursor:pointer;outline:none
+  }
+  select.prod:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(200,132,31,.16)}
+  .auto{color:var(--ink)}
+  .auto.dim{color:var(--muted);font-style:italic}
+  .tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;
+    background:var(--amber-soft);color:#7a4e07;letter-spacing:.04em}
+  .tag.wg{background:#d9e9d2;color:#2c5320}
+
+  .edit input{
+    font-family:'Archivo';font-weight:600;font-size:14.5px;color:#705012;
+    background:var(--edit);border:1.5px solid var(--edit-bd);border-radius:8px;
+    padding:6px 9px;width:96px;outline:none;text-align:right
+  }
+  .edit input:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(200,132,31,.2)}
+
+  .res{font-family:'Fraunces',serif;font-weight:600;font-size:16px;color:var(--forest)}
+  .res small{font-family:'Archivo';font-weight:500;font-size:11px;color:var(--muted)}
+  .total{font-size:18px}
+  .idx{font-weight:700}
+  .barwrap{display:flex;align-items:center;gap:8px}
+  .bar{height:8px;border-radius:6px;background:var(--leaf);min-width:3px;opacity:.85}
+  .badge{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px;margin-left:6px;letter-spacing:.03em}
+  .badge.cheap{background:var(--win-bg);color:var(--win)}
+  .badge.ia{background:var(--iawin-bg);color:var(--iawin)}
+  td.winner{box-shadow:inset 0 0 0 2px var(--win)}
+  td.winneria{box-shadow:inset 0 0 0 2px var(--iawin)}
+
+  .legend{display:flex;flex-wrap:wrap;gap:16px;margin:18px 2px 4px;font-size:12.5px;color:var(--muted)}
+  .legend span{display:flex;align-items:center;gap:7px}
+  .dot{width:13px;height:13px;border-radius:4px;border:1.5px solid}
+  .dot.e{background:var(--edit);border-color:var(--edit-bd)}
+  .dot.a{background:#fff;border-color:var(--leaf)}
+  .dot.r{background:#eef3e9;border-color:var(--forest)}
+
+  footer{margin-top:24px;font-size:12.5px;color:var(--muted);line-height:1.6;
+    border-top:1px solid var(--line);padding-top:14px}
+  footer b{color:var(--forest2)}
+  .note{background:#fbf6ea;border-left:3px solid var(--amber);padding:11px 15px;border-radius:0 10px 10px 0;
+    font-size:13px;color:#5d4516;margin-top:14px}
+  @media(max-width:640px){
+    .area-input{width:140px;font-size:24px}
+    .btns{margin-left:0;width:100%}
+    .rowlabel{min-width:150px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">Inteligência de Mercado · Defensivos</div>
+    <h1>Simulador de custo <em>por hectare</em></h1>
+    <p class="sub">Compare glifosatos lado a lado. Selecione cada produto, ajuste dose, preço e área — todos os indicadores recalculam na hora. Base: MAPA / AGROFIT.</p>
+  </header>
+
+  <div class="panel">
+    <div class="field">
+      <label for="area">Área a calcular (ha)</label>
+      <input id="area" class="area-input" type="number" min="0" step="1" value="1000">
+    </div>
+    <div class="hint">Altere a área para projetar o custo total da operação em cada produto.</div>
+    <div class="btns">
+      <button class="ctl" id="rem">– Remover coluna</button>
+      <button class="ctl" id="add">+ Adicionar produto</button>
+    </div>
+  </div>
+
+  <div class="scroller">
+    <table id="t">
+      <thead><tr id="head"></tr></thead>
+      <tbody id="body"></tbody>
+    </table>
+  </div>
+
+  <div class="legend">
+    <span><i class="dot a"></i> Selecione no menu (preenche da base)</span>
+    <span><i class="dot e"></i> Campo editável</span>
+    <span><i class="dot r"></i> Resultado calculado</span>
+    <span><i class="badge cheap">★ menor R$/ha</i></span>
+    <span><i class="badge ia">★ melhor R$/g i.a.</i></span>
+  </div>
+
+  <div class="note">
+    💡 <b>Argumento de venda:</b> use o <b>Custo por g i.a.</b> (última linha) para mostrar que maior concentração = menor dose por ha = menor custo real, mesmo quando o preço por litro parece maior.
+  </div>
+
+  <footer>
+    <b>Como ler os resultados.</b> Custo R$/ha = (Dose ÷ Embalagem) × Preço. Custo total = Custo/ha × Área. Índice relativo: 1,00× é o mais barato; 1,50× custa 50% a mais que ele. Dose em i.a. = Dose × Concentração (g de ingrediente ativo por ha). Custo por g i.a. = Custo/ha ÷ g i.a./ha — a métrica mais justa de comparação.<br>
+    <b>Nota técnica.</b> Na planilha original a linha "Princípio Ativo" trazia, na verdade, o fabricante (o princípio ativo é glifosato em todos). Aqui isso foi separado em <b>Fabricante</b> e <b>Tipo de sal</b>. Concentrações em g/L (SL = líquido) ou g/kg (WG = granulado). Base ilustrativa — confirme registros vigentes em agrofit.agricultura.gov.br.
+  </footer>
+</div>
+
+<script>
+const PRODUTOS = [{"nome": "Roundup Original DI", "empresa": "Bayer", "eqacido": 370, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Roundup Original +", "empresa": "Bayer", "eqacido": 480, "form": "SL", "dose": 4, "emb": 1, "obs": "Sal Amônio"}, {"nome": "Roundup WG", "empresa": "Bayer", "eqacido": 720, "form": "WG", "dose": 3, "emb": 1, "obs": "Sal Amônio"}, {"nome": "Roundup Transorb R", "empresa": "Bayer", "eqacido": 480, "form": "SL", "dose": 4, "emb": 1, "obs": "Sal potássico"}, {"nome": "Roundup Ultra", "empresa": "Bayer", "eqacido": 650, "form": "SL", "dose": 3.5, "emb": 1, "obs": "Sal Amônio"}, {"nome": "Roundup Activ", "empresa": "Bayer", "eqacido": 648, "form": "SL", "dose": 3.5, "emb": 1, "obs": "Sal potássico"}, {"nome": "WIPE OUT", "empresa": "Rainbow", "eqacido": 720, "form": "WG", "dose": 3, "emb": 1, "obs": "Sal Amônio"}, {"nome": "Touchdown", "empresa": "Syngenta", "eqacido": 500, "form": "SL", "dose": 4, "emb": 1, "obs": "Sal potássico"}, {"nome": "Glifosato Alamos 480 SL", "empresa": "Crotect", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glifosato Nortox 480 SL", "empresa": "Nortox", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glifosato Nortox 720 WG", "empresa": "Nortox", "eqacido": 720, "form": "WG", "dose": 3, "emb": 1, "obs": "Sal Amônio"}, {"nome": "Glifosato Nortox Ultra", "empresa": "Nortox", "eqacido": 533, "form": "SL", "dose": 4, "emb": 1, "obs": "—"}, {"nome": "Glifosato Perterra 480 SL", "empresa": "Perterra", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Gliz 480 SL", "empresa": "Adama", "eqacido": 356, "form": "SL", "dose": 5, "emb": 1, "obs": "—"}, {"nome": "Gliz 720 WG", "empresa": "Adama", "eqacido": 720, "form": "WG", "dose": 3, "emb": 1, "obs": "Sal Amônio"}, {"nome": "Zapp Qi 620", "empresa": "Syngenta", "eqacido": 500, "form": "SL", "dose": 4, "emb": 1, "obs": "Sal potássico"}, {"nome": "Glifosato 480 SL Sino-Agri", "empresa": "Perterra", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Escala 480 SL", "empresa": "Allier Brasil", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glifosato Atanor 480 SL", "empresa": "Atanor", "eqacido": 480, "form": "SL", "dose": 4, "emb": 1, "obs": "—"}, {"nome": "Glifos", "empresa": "FMC", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Gli Up 480 SL", "empresa": "Cropchem", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Gli Up 720 WG", "empresa": "Cropchem", "eqacido": 720, "form": "WG", "dose": 3, "emb": 1, "obs": "Sal Amônio"}, {"nome": "Braddock Ultra", "empresa": "Solus", "eqacido": 480, "form": "SL", "dose": 4, "emb": 1, "obs": "—"}, {"nome": "Crucial", "empresa": "Sumitomo", "eqacido": 540, "form": "SL", "dose": 4, "emb": 1, "obs": "—"}, {"nome": "Gli Ouro", "empresa": "Ouro Fino", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glicrush", "empresa": "Rainbow", "eqacido": 720, "form": "WG", "dose": 3, "emb": 1, "obs": "Sal Amônio"}, {"nome": "Glifosato 480 SL Agroimport", "empresa": "Agro Import", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glifosato 480 SL Tecnomyl", "empresa": "Tecnomyl", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glifosato 480 SL CCAB", "empresa": "CCAB", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glifosato CCAB 620 SL", "empresa": "CCAB", "eqacido": 500, "form": "SL", "dose": 4, "emb": 1, "obs": "Sal potássico"}, {"nome": "Glifosato Alta 480 SL", "empresa": "Alta", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glifosato CHDS", "empresa": "CHDS", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glifosato K Albaugh 02", "empresa": "Albaugh", "eqacido": 540, "form": "SL", "dose": 4, "emb": 1, "obs": "—"}, {"nome": "Glifosato K Atanor", "empresa": "Atanor", "eqacido": 356, "form": "SL", "dose": 5, "emb": 1, "obs": "—"}, {"nome": "Glifosato Nortox", "empresa": "Nortox", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glifosato Nortox 480 BR", "empresa": "Nortox", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glifosato Sumitomo 720 WG", "empresa": "Sumitomo", "eqacido": 720, "form": "SL", "dose": 3, "emb": 1, "obs": "Sal Amônio"}, {"nome": "Glifosato Soma 480 SL", "empresa": "CCAB", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glifosato Wynca 480 SL", "empresa": "Wynca", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glifosato HL", "empresa": "Fuhua", "eqacido": 540, "form": "SL", "dose": 4, "emb": 1, "obs": "Sal potássico"}, {"nome": "Glifo Max", "empresa": "Fuhua", "eqacido": 540, "form": "SL", "dose": 4, "emb": 1, "obs": "Sal potássico"}, {"nome": "Glifox Turbo", "empresa": "Fuhua", "eqacido": 540, "form": "SL", "dose": 4, "emb": 1, "obs": "Sal potássico"}, {"nome": "Glifoxin", "empresa": "Helm", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glifoxim WG", "empresa": "Helm", "eqacido": 687, "form": "SL", "dose": 3, "emb": 1, "obs": "—"}, {"nome": "Glifumaz 72 HL", "empresa": "Fuhua", "eqacido": 720, "form": "WG", "dose": 3, "emb": 1, "obs": "Sal Amônio"}, {"nome": "Glifoready", "empresa": "Sumitomo", "eqacido": 540, "form": "SL", "dose": 4, "emb": 1, "obs": "Sal potássico, sal isopropilamina"}, {"nome": "Glifosato IPA 480 Sino-Agri", "empresa": "Sino-Agri", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glifosato K 660 SL Alamos", "empresa": "Alamos", "eqacido": 540, "form": "SL", "dose": 4, "emb": 1, "obs": "Sal potássico"}, {"nome": "Xeque Mate", "empresa": "Fuhua", "eqacido": 500, "form": "SL", "dose": 4, "emb": 1, "obs": "Sal Amônio"}, {"nome": "Glimor", "empresa": "Agriconnection", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glimor WG", "empresa": "Agriconnection", "eqacido": 720, "form": "SL", "dose": 3, "emb": 1, "obs": "Sal Amônio"}, {"nome": "Glister", "empresa": "Sinon", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glister Off", "empresa": "Sinon", "eqacido": 450, "form": "SL", "dose": 4, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glizmax Prime", "empresa": "Albaugh", "eqacido": 480, "form": "SL", "dose": 4, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glyphosh", "empresa": "Sharda", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glyphosh SL", "empresa": "Sharda", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glyphotal TR", "empresa": "UPL", "eqacido": 480, "form": "SL", "dose": 4, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glyphotal WG", "empresa": "UPL", "eqacido": 720, "form": "WG", "dose": 3, "emb": 1, "obs": "Sal Amônio"}, {"nome": "Glysate 608 Pro", "empresa": "Wynca", "eqacido": 480, "form": "SL", "dose": 4, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glysate 698 DMA/Vindic", "empresa": "Wynca", "eqacido": 480, "form": "SL", "dose": 4, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Glysin-XA/Velik/Fortop", "empresa": "Wynca", "eqacido": 540, "form": "SL", "dose": 4, "emb": 1, "obs": "Sal potássico"}, {"nome": "Glyweed", "empresa": "Coromandel", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Kick-Off 480 SL", "empresa": "Comexport", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Limuzato", "empresa": "Agrolimuda", "eqacido": 355, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal potássico, sal isopropilamina"}, {"nome": "Mojjave", "empresa": "Ouro Fino", "eqacido": 540, "form": "SL", "dose": 4, "emb": 1, "obs": "—"}, {"nome": "Maxizato", "empresa": "Agro Import", "eqacido": 720, "form": "WG", "dose": 3, "emb": 1, "obs": "Sal Amônio"}, {"nome": "Mourão BR", "empresa": "Ouro Fino", "eqacido": 540, "form": "SL", "dose": 4, "emb": 1, "obs": "Sal potássico, sal isopropilamina"}, {"nome": "Nufosate", "empresa": "Sumitomo", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Pilarsato", "empresa": "Pilarquim", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Pocco 480 SL", "empresa": "Prentiss Quimica", "eqacido": 356, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Preciso WG", "empresa": "Albaugh", "eqacido": 678, "form": "WG", "dose": 3, "emb": 1, "obs": "Sal Amônio"}, {"nome": "Preciso XK", "empresa": "Albaugh", "eqacido": 540, "form": "SL", "dose": 4, "emb": 1, "obs": "Sal Potássico"}, {"nome": "Ridover/Corvus Xtra", "empresa": "Rainbow", "eqacido": 720, "form": "WG", "dose": 3, "emb": 1, "obs": "Sal Amônio"}, {"nome": "Sunphosate 757 WG", "empresa": "Wynca", "eqacido": 688, "form": "WG", "dose": 3, "emb": 1, "obs": "Sal Amônio"}, {"nome": "Sumo", "empresa": "Pilarquim", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Tecnup", "empresa": "Tecnomyl", "eqacido": 360, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Tecnup Max 720 WG", "empresa": "Tecnomyl", "eqacido": 720, "form": "WG", "dose": 3, "emb": 1, "obs": "Sal Amônio"}, {"nome": "Tecnup Premium", "empresa": "Tecnomyl", "eqacido": 500, "form": "SL", "dose": 4, "emb": 1, "obs": "Sal Potássico"}, {"nome": "Tecnup Super 608", "empresa": "Tecnomyl", "eqacido": 480, "form": "SL", "dose": 4, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Trop", "empresa": "Adama", "eqacido": 355, "form": "SL", "dose": 5, "emb": 1, "obs": "Sal isopropilamina"}, {"nome": "Trop Max", "empresa": "Adama", "eqacido": 500, "form": "SL", "dose": 4, "emb": 1, "obs": "Sal Potássico"}, {"nome": "Xeque Mate HT", "empresa": "Iharabras", "eqacido": 588, "form": "SL", "dose": 3.5, "emb": 1, "obs": "Sal Potássico"}, {"nome": "Xeque Mate WG", "empresa": "Iharabras", "eqacido": 720, "form": "WG", "dose": 3, "emb": 1, "obs": "Sal Amônio"}, {"nome": "Zafera", "empresa": "Alta", "eqacido": 720, "form": "WG", "dose": 3, "emb": 1, "obs": "Sal Amônio"}, {"nome": "Zavit", "empresa": "Alta", "eqacido": 688, "form": "SL", "dose": 3, "emb": 1, "obs": "Sal Amônio"}];
+const byName = Object.fromEntries(PRODUTOS.map(p=>[p.nome,p]));
+
+const DEFAULTS = ["Wipe Out","Roundup Original DI","Zapp Qi 620","Roundup Ultra"]; // colunas iniciais
+const MAXP = 7, MINP = 2;
+let cols = DEFAULTS.slice();
+
+const ROWS = [
+  {k:"sec",label:"Identificação"},
+  {k:"empresa",label:"Fabricante"},
+  {k:"sal",label:"Tipo de sal"},
+  {k:"conc",label:"Concentração (g/L · g/kg)"},
+  {k:"form",label:"Formulação"},
+  {k:"embpad",label:"Embalagem padrão"},
+  {k:"doserec",label:"Dose recomendada (bula)"},
+  {k:"sec2",label:"Edite os parâmetros"},
+  {k:"dose",label:"Dose utilizada (L · kg/ha)",edit:true},
+  {k:"preco",label:"Preço do produto (R$/un)",edit:true},
+  {k:"emb",label:"Embalagem comprada (L · kg)",edit:true},
+  {k:"sec3",label:"Resultados"},
+  {k:"custoha",label:"Custo R$/ha"},
+  {k:"custotot",label:"Custo total R$/área"},
+  {k:"indice",label:"Índice de custo relativo"},
+  {k:"doseia",label:"Dose em i.a. (g i.a./ha)"},
+  {k:"custoia",label:"Custo por g i.a. (R$)"},
+];
+
+// estado editável por coluna
+let state = [];
+function seedState(){
+  state = cols.map(n=>{
+    const p = byName[n] || {};
+    return { dose:p.dose ?? "", preco:"", emb:p.emb ?? 1 };
+  });
+}
+const seedPrices = {"Wipe Out":33,"Roundup Original DI":20,"Zapp Qi 620":26,"Roundup Ultra":28};
+
+const fmtBR = (v,d=2)=> v===""||v==null||isNaN(v) ? "—" :
+  Number(v).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtMoney = v => v===""||v==null||isNaN(v) ? "—" : "R$ "+fmtBR(v,2);
+
+function buildHead(){
+  const h = document.getElementById("head");
+  h.innerHTML = `<th class="rowlabel">Campo</th>` +
+    cols.map((n,i)=>`<th>Produto ${i+1}</th>`).join("");
+}
+
+function buildBody(){
+  const b = document.getElementById("body");
+  b.innerHTML = "";
+  ROWS.forEach(r=>{
+    const tr = document.createElement("tr");
+    if(r.k.startsWith("sec")){
+      tr.className="section";
+      tr.innerHTML = `<td class="rowlabel">${r.label}</td>`+
+        cols.map(()=>`<td></td>`).join("");
+      b.appendChild(tr); return;
+    }
+    let cells = `<td class="rowlabel">${r.label}</td>`;
+    cols.forEach((n,i)=>{
+      if(r.k==="empresa" && r.label==="Fabricante" && i===0 && false){}
+      if(ROWS.indexOf(r)===1){ // first data row -> selector spans only its own cell; we add selector on a dedicated row instead
+      }
+      cells += `<td data-c="${i}" data-k="${r.k}"></td>`;
+    });
+    tr.innerHTML = cells;
+    b.appendChild(tr);
+  });
+  // inject selector row at very top of body
+  const selTr = document.createElement("tr");
+  selTr.innerHTML = `<td class="rowlabel">▼ Selecione o produto</td>`+
+    cols.map((n,i)=>{
+      const opts = PRODUTOS.map(p=>`<option ${p.nome===n?"selected":""}>${p.nome}</option>`).join("");
+      return `<td><select class="prod" data-c="${i}">${opts}</select></td>`;
+    }).join("");
+  b.insertBefore(selTr, b.firstChild);
+  b.querySelectorAll("select.prod").forEach(s=>{
+    s.addEventListener("change",e=>{
+      const i = +e.target.dataset.c;
+      cols[i] = e.target.value;
+      const p = byName[cols[i]]||{};
+      state[i].dose = p.dose ?? "";
+      state[i].emb  = p.emb ?? 1;
+      render();
+    });
+  });
+}
+
+function calc(){
+  return cols.map((n,i)=>{
+    const p = byName[n]||{};
+    const st = state[i];
+    const dose = parseFloat(st.dose), preco = parseFloat(st.preco), emb = parseFloat(st.emb);
+    const conc = parseFloat(p.eqacido);
+    let custoha=null, doseia=null, custoia=null;
+    if(!isNaN(dose)&&!isNaN(preco)&&!isNaN(emb)&&emb!==0) custoha = (dose/emb)*preco;
+    if(!isNaN(dose)&&!isNaN(conc)) doseia = dose*conc;
+    if(custoha!=null&&doseia&&doseia!==0) custoia = custoha/doseia;
+    return {p,st,dose,preco,emb,conc,custoha,doseia,custoia};
+  });
+}
+
+function render(){
+  const area = parseFloat(document.getElementById("area").value)||0;
+  const C = calc();
+  const validHa = C.map(c=>c.custoha).filter(v=>v!=null&&!isNaN(v));
+  const minHa = validHa.length?Math.min(...validHa):null;
+  const maxHa = validHa.length?Math.max(...validHa):null;
+  const validIa = C.map(c=>c.custoia).filter(v=>v!=null&&!isNaN(v));
+  const minIa = validIa.length?Math.min(...validIa):null;
+
+  C.forEach((c,i)=>{
+    const set=(k,html,cls="")=>{
+      const td=document.querySelector(`td[data-c="${i}"][data-k="${k}"]`);
+      if(!td) return; td.innerHTML=html; td.className=cls;
+    };
+    set("empresa", `<span class="auto">${c.p.empresa||"—"}</span>`);
+    set("sal", `<span class="auto ${c.p.obs==="—"?"dim":""}">${c.p.obs||"—"}</span>`);
+    set("conc", `<span class="auto">${c.conc?fmtBR(c.conc,0):"—"}</span>`);
+    set("form", c.p.form?`<span class="tag ${c.p.form==="WG"?"wg":""}">${c.p.form}</span>`:"—");
+    set("embpad", `<span class="auto">${c.p.emb!=null?fmtBR(c.p.emb,0):"—"}</span>`);
+    set("doserec", `<span class="auto">${c.p.dose!=null?fmtBR(c.p.dose,1):"—"}</span>`);
+
+    set("dose", `<span class="edit"><input type="number" step="0.1" min="0" data-c="${i}" data-f="dose" value="${c.st.dose}"></span>`,"edit");
+    set("preco",`<span class="edit"><input type="number" step="0.01" min="0" data-c="${i}" data-f="preco" value="${c.st.preco}" placeholder="0,00"></span>`,"edit");
+    set("emb",  `<span class="edit"><input type="number" step="0.1" min="0" data-c="${i}" data-f="emb" value="${c.st.emb}"></span>`,"edit");
+
+    // resultados
+    const cheap = c.custoha!=null && minHa!=null && Math.abs(c.custoha-minHa)<1e-9;
+    const iawin = c.custoia!=null && minIa!=null && Math.abs(c.custoia-minIa)<1e-9;
+    set("custoha", c.custoha!=null
+        ? `<span class="res">${fmtMoney(c.custoha)}</span>${cheap?'<span class="badge cheap">★ menor</span>':''}`
+        : "—", cheap?"winner":"");
+    set("custotot", c.custoha!=null
+        ? `<span class="res total">${fmtMoney(c.custoha*area)}</span>`
+        : "—");
+    let idxHtml="—";
+    if(c.custoha!=null&&minHa){
+      const idx=c.custoha/minHa;
+      const w=maxHa?Math.max(3,Math.round((c.custoha/maxHa)*120)):3;
+      idxHtml=`<div class="barwrap"><span class="idx">${fmtBR(idx,2)}×</span><span class="bar" style="width:${w}px"></span></div>`;
+    }
+    set("indice", idxHtml);
+    set("doseia", c.doseia!=null?`<span class="res">${fmtBR(c.doseia,0)}</span> <small>g</small>`:"—");
+    set("custoia", c.custoia!=null
+        ? `<span class="res">${fmtMoney(c.custoia)}</span>${iawin?'<span class="badge ia">★ melhor</span>':''}`
+        : "—", iawin?"winneria":"");
+  });
+
+  // wire edit inputs
+  document.querySelectorAll('input[data-f]').forEach(inp=>{
+    inp.addEventListener("input",e=>{
+      const i=+e.target.dataset.c, f=e.target.dataset.f;
+      state[i][f]=e.target.value;
+      renderResultsOnly();
+    });
+  });
+  document.getElementById("add").disabled = cols.length>=MAXP;
+  document.getElementById("rem").disabled = cols.length<=MINP;
+}
+
+// lighter re-render that keeps focus in edited input
+function renderResultsOnly(){
+  const area = parseFloat(document.getElementById("area").value)||0;
+  const C = calc();
+  const validHa=C.map(c=>c.custoha).filter(v=>v!=null&&!isNaN(v));
+  const minHa=validHa.length?Math.min(...validHa):null;
+  const maxHa=validHa.length?Math.max(...validHa):null;
+  const validIa=C.map(c=>c.custoia).filter(v=>v!=null&&!isNaN(v));
+  const minIa=validIa.length?Math.min(...validIa):null;
+  C.forEach((c,i)=>{
+    const set=(k,html,cls)=>{const td=document.querySelector(`td[data-c="${i}"][data-k="${k}"]`);if(!td)return;td.innerHTML=html;if(cls!==undefined)td.className=cls;};
+    const cheap=c.custoha!=null&&minHa!=null&&Math.abs(c.custoha-minHa)<1e-9;
+    const iawin=c.custoia!=null&&minIa!=null&&Math.abs(c.custoia-minIa)<1e-9;
+    set("custoha",c.custoha!=null?`<span class="res">${fmtMoney(c.custoha)}</span>${cheap?'<span class="badge cheap">★ menor</span>':''}`:"—",cheap?"winner":"");
+    set("custotot",c.custoha!=null?`<span class="res total">${fmtMoney(c.custoha*area)}</span>`:"—","");
+    set("doseia",c.doseia!=null?`<span class="res">${fmtBR(c.doseia,0)}</span> <small>g</small>`:"—","");
+    set("custoia",c.custoia!=null?`<span class="res">${fmtMoney(c.custoia)}</span>${iawin?'<span class="badge ia">★ melhor</span>':''}`:"—",iawin?"winneria":"");
+    let idxHtml="—";
+    if(c.custoha!=null&&minHa){const idx=c.custoha/minHa;const w=maxHa?Math.max(3,Math.round((c.custoha/maxHa)*120)):3;
+      idxHtml=`<div class="barwrap"><span class="idx">${fmtBR(idx,2)}×</span><span class="bar" style="width:${w}px"></span></div>`;}
+    set("indice",idxHtml,"");
+  });
+}
+
+function rebuild(){ buildHead(); buildBody(); render(); }
+
+document.getElementById("area").addEventListener("input",renderResultsOnly);
+document.getElementById("add").addEventListener("click",()=>{
+  if(cols.length>=MAXP)return;
+  const next = PRODUTOS.find(p=>!cols.includes(p.nome)) || PRODUTOS[0];
+  cols.push(next.nome);
+  state.push({dose:next.dose??"",preco:"",emb:next.emb??1});
+  rebuild();
+});
+document.getElementById("rem").addEventListener("click",()=>{
+  if(cols.length<=MINP)return;
+  cols.pop(); state.pop(); rebuild();
+});
+
+seedState();
+// pre-fill demo prices for the default columns
+cols.forEach((n,i)=>{ if(seedPrices[n]!=null) state[i].preco=seedPrices[n]; });
+rebuild();
+</script>
+</body>
+</html>
